@@ -1,0 +1,49 @@
+default_severity: medium
+
+# Fields that are noise and never count as drift
+ignore_paths:
+  - "tags_all*"
+  - "arn"
+  - "id"
+  - "timeouts*"
+
+# Every matching rule is evaluated and the highest severity wins.
+rules:
+  - name: Sensitive port opened to the internet
+    severity: critical
+    resource_type: aws_security_group
+    path: ingress
+    kind: extra_in_live
+    item_match:
+      from_port: [22, 3389, 3306, 5432]
+      cidr_blocks_contains: "0.0.0.0/0"
+
+  - name: New inbound rule added outside Git
+    severity: high
+    resource_type: aws_security_group
+    path: ingress
+    kind: extra_in_live
+
+  - name: Inbound rule removed outside Git
+    severity: medium
+    resource_type: aws_security_group
+    path: ingress
+    kind: missing_in_live
+
+  - name: Resource deleted or unmanaged
+    severity: high
+    path: "(resource)"
+
+  - name: S3 access or encryption changed
+    severity: high
+    resource_type: aws_s3_bucket
+    path: ["policy*", "acl*", "grant*", "server_side_encryption_configuration*"]
+
+  - name: S3 versioning or logging changed
+    severity: medium
+    resource_type: aws_s3_bucket
+    path: ["versioning*", "logging*"]
+
+  - name: Tag changed
+    severity: low
+    path: "tags*"
