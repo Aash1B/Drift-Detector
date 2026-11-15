@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -5,15 +6,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import FindingRow, Scan
+from app.db.models import Alert, FindingRow, Scan
 from app.db.session import Base, engine, get_db
+from app.scheduler import start_scheduler, stop_scheduler
 from app.services.scan_service import run_scan
+
+logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)    # creates tables on first start
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 app = FastAPI(title="Drift Detector API", lifespan=lifespan)
@@ -82,6 +88,14 @@ def list_findings(severity: str | None = None, scan_id: int | None = None,
     if severity:
         q = q.where(FindingRow.severity == severity)
     return [finding_out(f) for f in db.scalars(q.order_by(FindingRow.id)).all()]
+
+
+@app.get("/alerts")
+def list_alerts(limit: int = 50, db: Session = Depends(get_db)):
+    rows = db.scalars(select(Alert).order_by(Alert.id.desc()).limit(limit)).all()
+    return [{"id": a.id, "scan_id": a.scan_id, "kind": a.kind, "severity": a.severity,
+             "channel": a.channel, "status": a.status, "message": a.message,
+             "sent_at": a.sent_at} for a in rows]
 
 
 @app.get("/stats")

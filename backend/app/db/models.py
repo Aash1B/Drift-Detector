@@ -42,3 +42,16 @@ class FindingRow(Base):
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     scan: Mapped["Scan"] = relationship(back_populates="findings")
+
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("scans.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))        # new_drift | resolved | scan_error
+    severity: Mapped[str | None] = mapped_column(String(10))
+    channel: Mapped[str] = mapped_column(String(20))     # slack | log
+    message: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20))      # sent | failed | logged
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

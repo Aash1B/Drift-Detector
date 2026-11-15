@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import threading
 from dataclasses import asdict
@@ -8,6 +9,7 @@ from app.config import INFRA_PATH, POLICY_PATH, ROOT
 from app.db.models import FindingRow, Scan, utcnow
 from app.detectors.terraform import run_terraform_scan
 from app.engine.analyzer import ORDER, analyze, describe, load_policy
+from app.services.alert_service import process_alerts
 
 _lock = threading.Lock()   # only one terraform scan at a time (state lock + plan file)
 
@@ -57,4 +59,10 @@ def run_scan(db: Session, trigger: str = "manual") -> Scan:
     scan.finished_at = utcnow()
     db.commit()
     db.refresh(scan)
+
+    try:
+        process_alerts(db, scan)
+    except Exception:
+        logging.getLogger("drift").exception("alert processing failed")
+
     return scan
