@@ -24,5 +24,33 @@ services:
     depends_on:
       - db
 
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      TF_DATA_DIR: /var/tfdata
+    volumes:
+      - ./infra-repo:/app/infra-repo
+      - ./policies:/app/policies
+      - tfdata:/var/tfdata
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dashboard:
+    build: ./dashboard
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
+  tfdata:
