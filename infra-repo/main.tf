@@ -5,6 +5,13 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket       = "drift-state-aashi-2026-x7k"
+    key          = "drift-demo/terraform.tfstate"
+    region       = "ap-south-1"
+    use_lockfile = true
+  }
 }
 
 variable "bucket_name" {

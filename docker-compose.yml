@@ -47,7 +47,7 @@ services:
     build: ./dashboard
     restart: unless-stopped
     ports:
-      - "5173:80"
+      - "80:80"
     depends_on:
       - backend
 

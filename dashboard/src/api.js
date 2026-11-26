@@ -1,4 +1,4 @@
-const BASE = "http://127.0.0.1:8000";
+const BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 async function request(path, options) {
   const res = await fetch(`${BASE}${path}`, options);
@@ -7,7 +7,8 @@ async function request(path, options) {
 }
 
 export const getStats = () => request("/stats");
-export const getScans = () => request("/scans?limit=15");
+export const getScans = (limit = 40) => request(`/scans?limit=${limit}`);
+export const getScan = (id) => request(`/scans/${id}`);
 export const getFindings = () => request("/findings");
-export const getAlerts = () => request("/alerts?limit=10");
+export const getAlerts = (limit = 30) => request(`/alerts?limit=${limit}`);
 export const runScan = () => request("/scans", { method: "POST" });
